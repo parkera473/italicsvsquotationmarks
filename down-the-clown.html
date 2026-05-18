@@ -181,13 +181,19 @@
     #clown-grid {
       display: flex;
       flex-direction: column;
-      justify-content: flex-start;
-      margin-top: auto;
+      justify-content: flex-end;
+      flex: 1;
+      overflow: hidden;
     }
 
     .shelf-wrap {
       position: relative;
       padding-bottom: 10px;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      min-height: 0;
     }
     .shelf-wrap::after {
       content: '';
@@ -243,10 +249,10 @@
       pointer-events: none;
     }
 
-    /* Row-based image sizing — bigger than before */
-    #row-0 .clown-img-wrap img { max-height: 25vh; }
-    #row-1 .clown-img-wrap img { max-height: 20vh; }
-    #row-2 .clown-img-wrap img { max-height: 15vh; }
+    /* Row-based image sizing — constrained to fit within shared shelf height */
+    #row-0 .clown-img-wrap img { max-height: 18vh; }
+    #row-1 .clown-img-wrap img { max-height: 15vh; }
+    #row-2 .clown-img-wrap img { max-height: 12vh; }
 
     .clown-label {
       width: 100%;
