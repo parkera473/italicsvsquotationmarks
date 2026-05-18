@@ -315,6 +315,13 @@
       font-weight: bold; cursor: pointer;
     }
     #welcome-template-btn:hover { background: rgba(68,136,255,0.15); }
+    #welcome-vocab-btn {
+      background: transparent; color: #aac4ff;
+      border: 2px solid #4488ff; border-radius: 999px;
+      padding: 10px 28px; font-size: 15px;
+      font-weight: bold; cursor: pointer;
+    }
+    #welcome-vocab-btn:hover { background: rgba(68,136,255,0.15); }
 
     /* End screen */
     #end-screen {
@@ -371,6 +378,7 @@
   <div id="welcome-title">🎪 Down the Clown! 🎪</div>
   <div id="welcome-sub">Upload a CSV with your vocabulary words to start the game. Each row needs a fill-in-the-blank sentence and the correct answer.</div>
   <label id="welcome-upload-btn" for="csv-input">📂 Upload CSV to Play</label>
+  <button id="welcome-vocab-btn">⬇ Download Vocab List</button>
   <button id="welcome-template-btn">⬇ Download Blank Template</button>
 </div>
 
@@ -454,6 +462,7 @@ function downloadTemplate() {
 }
 document.getElementById('download-template').addEventListener('click', downloadTemplate);
 document.getElementById('welcome-template-btn').addEventListener('click', downloadTemplate);
+document.getElementById('welcome-vocab-btn').addEventListener('click', () => document.getElementById('download-vocab').click());
 
 // ── Vocab list download ────────────────────────────────────────────────────
 document.getElementById('download-vocab').addEventListener('click', () => {
