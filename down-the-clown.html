@@ -1,0 +1,995 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Down the Clown</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Arial Rounded MT Bold', Arial, sans-serif;
+      background: radial-gradient(ellipse at 50% 30%, #5a9ec0 0%, #2d6e8a 45%, #1a4a62 100%);
+      min-height: 100vh;
+      cursor: none;
+      overflow: hidden;
+      user-select: none;
+    }
+
+    #canopy {
+      height: 18px;
+      background: repeating-linear-gradient(90deg,
+        #cc1111 0px, #cc1111 28px, #f5f5f5 28px, #f5f5f5 56px);
+      flex-shrink: 0;
+      border-bottom: 3px solid #8B0000;
+    }
+
+    #ball {
+      position: fixed;
+      width: 38px; height: 38px;
+      background: radial-gradient(circle at 35% 32%, #ff7777, #bb0000 60%, #7a0000);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 9999;
+      transform: translate(-50%, -50%);
+      box-shadow: 2px 3px 8px rgba(0,0,0,0.5);
+    }
+
+    #fly-ball {
+      position: fixed;
+      width: 38px; height: 38px;
+      background: radial-gradient(circle at 35% 32%, #ff7777, #bb0000 60%, #7a0000);
+      border-radius: 50%;
+      pointer-events: none;
+      z-index: 9998;
+      transform: translate(-50%, -50%);
+      box-shadow: 2px 3px 8px rgba(0,0,0,0.5);
+      display: none;
+      transition: left 0.22s ease-in, top 0.22s ease-in;
+    }
+
+    #game {
+      max-width: 1000px;
+      margin: 0 auto;
+      padding: 8px 14px 4px;
+      height: calc(100vh - 18px);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    #hud {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-shrink: 0;
+    }
+
+    .hud-pill {
+      background: rgba(255,255,255,0.18);
+      border: 1px solid rgba(255,255,255,0.25);
+      border-radius: 999px;
+      padding: 5px 16px;
+      color: #fff;
+      font-size: 14px;
+      font-weight: bold;
+    }
+    .hud-pill span { color: #f5c518; }
+
+    #timer-pill {
+      background: rgba(255,255,255,0.18);
+      border: 1px solid rgba(255,255,255,0.25);
+      border-radius: 999px;
+      padding: 5px 16px;
+      color: #fff;
+      font-size: 14px;
+      font-weight: bold;
+      transition: background 0.3s, border-color 0.3s;
+    }
+    #timer-pill.danger {
+      background: rgba(200,0,0,0.55);
+      border-color: #ff4444;
+      animation: pulse 0.6s ease infinite alternate;
+    }
+    @keyframes pulse {
+      from { transform: scale(1); }
+      to   { transform: scale(1.08); }
+    }
+    #double-banner {
+      display: none;
+      text-align: center;
+      font-size: 15px;
+      font-weight: bold;
+      color: #f5c518;
+      letter-spacing: 1px;
+      flex-shrink: 0;
+      animation: pulse 0.5s ease infinite alternate;
+    }
+    #double-banner.show { display: block; }
+
+    #upload-label {
+      background: #f5c518;
+      color: #1a1a1a;
+      border-radius: 999px;
+      padding: 5px 15px;
+      font-size: 13px;
+      font-weight: bold;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    #upload-label:hover { background: #ffd93d; }
+    #csv-input { display: none; }
+
+    #download-template {
+      background: rgba(255,255,255,0.18);
+      border: 1px solid rgba(255,255,255,0.35);
+      border-radius: 999px;
+      padding: 5px 15px;
+      color: #fff;
+      font-size: 13px;
+      font-weight: bold;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    #download-template:hover { background: rgba(255,255,255,0.28); }
+    #download-vocab {
+      background: rgba(255,255,255,0.18);
+      border: 1px solid rgba(255,255,255,0.35);
+      border-radius: 999px;
+      padding: 5px 15px;
+      color: #fff;
+      font-size: 13px;
+      font-weight: bold;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    #download-vocab:hover { background: rgba(255,255,255,0.28); }
+
+    #question-box {
+      background: #fff;
+      border-radius: 10px;
+      padding: 11px 22px;
+      text-align: center;
+      font-size: clamp(14px, 2.1vw, 20px);
+      font-weight: bold;
+      color: #111;
+      flex-shrink: 0;
+      min-height: 50px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 14px rgba(0,0,0,0.3);
+      line-height: 1.4;
+    }
+
+    .blank {
+      display: inline-block;
+      min-width: 100px;
+      border-bottom: 3px solid #cc1111;
+      margin: 0 6px;
+      color: transparent;
+    }
+
+    #message {
+      text-align: center;
+      font-size: 16px;
+      font-weight: bold;
+      min-height: 20px;
+      flex-shrink: 0;
+    }
+
+    #clown-grid {
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      margin-top: auto;
+    }
+
+    .shelf-wrap {
+      position: relative;
+      padding-bottom: 10px;
+    }
+    .shelf-wrap::after {
+      content: '';
+      position: absolute;
+      bottom: 0; left: -14px; right: -14px;
+      height: 10px;
+      background: linear-gradient(to bottom, #a0622a, #6b3d18);
+      border-top: 2px solid #c07840;
+    }
+
+    .clown-row {
+      display: flex;
+      justify-content: center;
+      align-items: flex-end;
+      gap: 8px;
+      padding-bottom: 2px;
+    }
+
+    .clown-wrap {
+      position: relative;
+      cursor: none;
+      flex-shrink: 0;
+      display: inline-flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* Fall and shake go on the inner img-wrap, NOT clown-wrap,
+       so the score card (sibling) stays in place */
+    .clown-img-wrap {
+      position: relative;
+      display: inline-block;
+      transform-origin: bottom center;
+      transition: transform 0.55s cubic-bezier(0.4, 0, 0.6, 1),
+                  opacity 0.55s ease;
+    }
+
+    .clown-img-wrap.fallen-left  { transform: rotate(-88deg) translateX(-30%); opacity: 0.15; }
+    .clown-img-wrap.fallen-right { transform: rotate(88deg) translateX(30%);   opacity: 0.15; }
+
+    .clown-img-wrap.shake { animation: shake 0.38s ease; }
+    @keyframes shake {
+      0%   { transform: translateX(0) rotate(0); }
+      18%  { transform: translateX(-8px) rotate(-4deg); }
+      36%  { transform: translateX(8px) rotate(4deg); }
+      54%  { transform: translateX(-5px) rotate(-2deg); }
+      72%  { transform: translateX(5px) rotate(2deg); }
+      100% { transform: translateX(0) rotate(0); }
+    }
+    .clown-img-wrap img {
+      height: auto;
+      display: block;
+      pointer-events: none;
+    }
+
+    /* Row-based image sizing — bigger than before */
+    #row-0 .clown-img-wrap img { max-height: 25vh; }
+    #row-1 .clown-img-wrap img { max-height: 20vh; }
+    #row-2 .clown-img-wrap img { max-height: 15vh; }
+
+    .clown-label {
+      width: 100%;
+      background: #1a3a8f;
+      border: 2px solid #cc2222;
+      border-radius: 5px;
+      color: white;
+      font-weight: bold;
+      font-family: 'Arial Rounded MT Bold', Arial, sans-serif;
+      text-align: center;
+      padding: 3px 4px;
+      line-height: 1.2;
+      word-break: break-word;
+      pointer-events: none;
+      margin-top: 3px;
+    }
+
+    /* Score card that appears after clown falls */
+    .score-card {
+      display: none;
+      position: absolute;
+      inset: 0;
+      background: #0b1e52;
+      border: 3px solid #4488ff;
+      border-radius: 10px;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      color: #f5c518;
+      font-family: 'Arial Rounded MT Bold', Arial, sans-serif;
+      z-index: 20;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .score-card.visible { display: flex; opacity: 1; transition: opacity 0.8s ease; }
+    .score-card.fading  { opacity: 0; }
+    #row-0 .score-card { font-size: clamp(14px, 2.4vw, 28px); }
+    #row-1 .score-card { font-size: clamp(12px, 1.9vw, 22px); }
+    #row-2 .score-card { font-size: clamp(10px, 1.5vw, 18px); }
+    .score-card .pts-label { font-size: 0.65em; color: #aac4ff; letter-spacing: 0.5px; }
+
+    /* Welcome screen */
+    #welcome-screen {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.82);
+      z-index: 600;
+      align-items: center; justify-content: center;
+      flex-direction: column; gap: 20px;
+      color: #fff; text-align: center;
+    }
+    #welcome-screen.show { display: flex; }
+    #welcome-title { font-size: clamp(28px, 5vw, 48px); }
+    #welcome-sub   { font-size: clamp(14px, 2vw, 18px); color: #cce4ff; max-width: 480px; line-height: 1.5; }
+    #welcome-upload-btn {
+      background: #f5c518; color: #1a1a1a;
+      border: none; border-radius: 999px;
+      padding: 14px 40px; font-size: 20px;
+      font-weight: bold; cursor: pointer; margin-top: 4px;
+    }
+    #welcome-upload-btn:hover { background: #ffd93d; }
+    #welcome-template-btn {
+      background: transparent; color: #aac4ff;
+      border: 2px solid #4488ff; border-radius: 999px;
+      padding: 10px 28px; font-size: 15px;
+      font-weight: bold; cursor: pointer;
+    }
+    #welcome-template-btn:hover { background: rgba(68,136,255,0.15); }
+
+    /* End screen */
+    #end-screen {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.78);
+      z-index: 500;
+      align-items: center; justify-content: center;
+      flex-direction: column; gap: 18px;
+      color: #fff; text-align: center;
+    }
+    #end-screen.show { display: flex; }
+    #end-title  { font-size: clamp(22px, 4vw, 36px); }
+    #end-score  { font-size: clamp(36px, 7vw, 64px); font-weight: bold; color: #f5c518; }
+    #end-max    { font-size: 16px; color: #aaa; }
+    #play-again {
+      background: #f5c518; color: #1a1a1a;
+      border: none; border-radius: 999px;
+      padding: 12px 36px; font-size: 20px;
+      font-weight: bold; cursor: pointer; margin-top: 6px;
+    }
+    #play-again:hover { background: #ffd93d; }
+  </style>
+</head>
+<body>
+
+<div id="canopy"></div>
+<div id="ball"></div>
+<div id="fly-ball"></div>
+
+<div id="game">
+  <div id="hud">
+    <div class="hud-pill">Score: <span id="score">0</span></div>
+    <div class="hud-pill">Q <span id="q-num">1</span> / <span id="q-total">—</span></div>
+    <div id="timer-pill">⏱ <span id="timer">1:30</span></div>
+    <button id="download-template">⬇ Template</button>
+    <button id="download-vocab">⬇ Vocab List</button>
+    <label id="upload-label" for="csv-input">📂 Upload CSV</label>
+    <input type="file" id="csv-input" accept=".csv">
+  </div>
+
+  <div id="question-box"><span id="sentence-text"></span></div>
+  <div id="double-banner">⚡ DOUBLE POINTS — LAST 15 SECONDS! ⚡</div>
+  <div id="message"></div>
+
+  <div id="clown-grid">
+    <div class="shelf-wrap"><div class="clown-row" id="row-0"></div></div>
+    <div class="shelf-wrap"><div class="clown-row" id="row-1"></div></div>
+    <div class="shelf-wrap"><div class="clown-row" id="row-2"></div></div>
+  </div>
+</div>
+
+<div id="welcome-screen" class="show">
+  <div id="welcome-title">🎪 Down the Clown! 🎪</div>
+  <div id="welcome-sub">Upload a CSV with your vocabulary words to start the game. Each row needs a fill-in-the-blank sentence and the correct answer.</div>
+  <label id="welcome-upload-btn" for="csv-input">📂 Upload CSV to Play</label>
+  <button id="welcome-template-btn">⬇ Download Blank Template</button>
+</div>
+
+<div id="end-screen">
+  <div id="end-title">🎪 Game Over! 🎪</div>
+  <div id="end-score">0</div>
+  <div id="end-max">out of 0 points</div>
+  <button id="play-again">Play Again</button>
+</div>
+
+<script>
+// ── Row point values ───────────────────────────────────────────────────────
+const ROW_PTS   = [10, 15, 25];
+const ROW_SIZES = [3, 4, 5];
+
+// No default questions — teacher must upload a CSV to play.
+
+// ── State ──────────────────────────────────────────────────────────────────
+let questions      = [];
+let wordPool       = [];
+let questionQueue  = [];   // upcoming questions (dynamic — recycled ones get spliced in)
+let answeredBank   = [];   // correctly answered questions available for recycling
+let uniqueAnswered = new Set(); // tracks which original questions are done
+let usedWords      = new Set(); // words ever assigned to a clown (for introducing new ones on respawn)
+let score          = 0;
+let locked         = false;
+let currentAnswer  = '';
+let clownEls       = [];   // persistent DOM refs for all 12 clowns
+let timeLeft       = 90;
+let timerInterval  = null;
+
+// ── Ball cursor ────────────────────────────────────────────────────────────
+const ballEl    = document.getElementById('ball');
+const flyBallEl = document.getElementById('fly-ball');
+let mouseX = 0, mouseY = 0;
+
+document.addEventListener('mousemove', e => {
+  mouseX = e.clientX; mouseY = e.clientY;
+  ballEl.style.left = mouseX + 'px';
+  ballEl.style.top  = mouseY + 'px';
+});
+
+function throwBall(targetEl, onLand) {
+  const rect = targetEl.getBoundingClientRect();
+  const tx = rect.left + rect.width / 2;
+  const ty = rect.top  + rect.height / 2;
+
+  flyBallEl.style.left = mouseX + 'px';
+  flyBallEl.style.top  = mouseY + 'px';
+  flyBallEl.style.display = 'block';
+  flyBallEl.style.transition = 'none';
+  ballEl.style.opacity = '0';
+
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    flyBallEl.style.transition = 'left 0.22s ease-in, top 0.22s ease-in';
+    flyBallEl.style.left = tx + 'px';
+    flyBallEl.style.top  = ty + 'px';
+  }));
+
+  setTimeout(() => {
+    flyBallEl.style.display = 'none';
+    ballEl.style.opacity = '1';
+    onLand();
+  }, 230);
+}
+
+// ── Template download ──────────────────────────────────────────────────────
+function downloadTemplate() {
+  const rows = [
+    'sentence,answer',
+    '"___ is the answer to the first question.",word1',
+    '"This sentence has a blank for ___.",word2',
+    '"Replace these rows with your own vocabulary and sentences for ___.",word3',
+  ];
+  const blob = new Blob([rows.join('\n')], { type: 'text/csv' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'down-the-clown-template.csv';
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+document.getElementById('download-template').addEventListener('click', downloadTemplate);
+document.getElementById('welcome-template-btn').addEventListener('click', downloadTemplate);
+
+// ── Vocab list download ────────────────────────────────────────────────────
+document.getElementById('download-vocab').addEventListener('click', () => {
+  const csv = `sentence,answer
+"She walked through the crowd ___, unaware of the chaos around her.",oblivious
+"He was completely ___ to the fact that everyone was staring at him.",oblivious
+"The child played happily, ___ to the argument happening nearby.",oblivious
+"Her anxiety began to ___ as a nervous twitch she could not control.",manifest
+"The symptoms would ___ differently in each patient.",manifest
+"His relief was ___— you could see it written all over his face.",manifest
+"His constant fear that someone was following him bordered on ___.",paranoia
+"___ gripped her mind as she imagined enemies lurking around every corner.",paranoia
+"Isolation and sleepless nights had pushed him toward full ___.",paranoia
+"The view from the summit was ___; no words could do it justice.",sublime
+"She played the final movement with ___ grace that left the audience breathless.",sublime
+"The poet sought to capture the ___ beauty of the night sky in words.",sublime
+"She looked at the poorly written essay with clear ___.",disdain
+"He made no effort to hide his ___ for those who cheated.",disdain
+"With obvious ___, the critic dismissed the painting as worthless.",disdain
+"The children were ___ by the street performer's tricks.",transfixed
+"She stood ___, staring at the unexpected message on the screen.",transfixed
+"He was ___ by the sight of lightning splitting the dark sky in two.",transfixed
+"The teacher asked students to speak in a clear, ___ manner.",intelligible
+"Her speech was barely ___ through the noise of the crowded room.",intelligible
+"Despite his heavy accent, his words were perfectly ___ to the crowd.",intelligible
+"The board gave its ___ to the new proposal after a brief discussion.",assent
+"She gave a slow nod of ___ when asked if she understood.",assent
+"Without his ___, the contract could not move forward.",assent
+"Arriving exactly one hour early was a personal ___ she had always had.",idiosyncrasy
+"Every artist has some ___ that shapes the way they create.",idiosyncrasy
+"His ___ of reading every label twice made grocery shopping take forever.",idiosyncrasy
+"The two rivers were ___ toward a single point just outside the city.",converging
+"All the clues were ___ on one undeniable conclusion.",converging
+"The paths kept ___, eventually meeting at the center of the maze.",converging
+"The instructions were ___, leaving absolutely no room for misunderstanding.",explicit
+"She made her feelings ___ by stating them plainly to the entire group.",explicit
+"The agreement included ___ terms that both parties were required to follow.",explicit
+"The new evidence was enough to ___ the suspect in the robbery.",implicate
+"She did not want to ___ her friends in the incident.",implicate
+"The leaked emails would ___ the director in the cover-up.",implicate
+"The ___ speaker moved the entire crowd to tears with her words.",eloquent
+"His ___ defense of the accused swayed even the most skeptical members of the jury.",eloquent
+"She delivered an ___ speech that earned her a standing ovation.",eloquent
+"Young athletes often ___ the training habits of their sports heroes.",emulate
+"He worked hard to ___ his mentor's steady and calm leadership style.",emulate
+"The student tried to ___ the precise writing style of her favorite author.",emulate
+"His ___ comment revealed far more than he had ever intended to share.",inadvertent
+"The scientist made an ___ error that skewed the results of the study.",inadvertent
+"She gave an ___ glance toward the hidden gift before catching herself.",inadvertent
+"The teacher grew ___ after repeating the same instructions for the fourth time.",exasperated
+"___ by the constant interruptions, he finally set his book down.",exasperated
+"Her long slow sigh made it clear she was completely ___.",exasperated
+"He cast a ___ glance over his shoulder before opening the envelope.",furtive
+"The ___ exchange between the two students did not go unnoticed by the teacher.",furtive
+"She slipped a ___ note into his hand without breaking stride.",furtive
+"With a heavy sigh of ___, she accepted that the situation would not improve.",resignation
+"He handed in his ___ from the committee after the difficult meeting.",resignation
+"There was a quiet ___ in her voice as she described her long struggle.",resignation
+"The new evidence finally served to ___ him after years of false accusations.",vindicate
+"She hoped the test results would ___ her theory once and for all.",vindicate
+"His later success would ___ everything she had believed about his potential.",vindicate
+"The abandoned dog sat ___ in the corner of the empty shelter.",forlorn
+"She wore a ___ expression as she watched the last train pull away.",forlorn
+"The ___ old house at the end of the road had been empty for decades.",forlorn
+"The fans were ___ as their team scored the final goal of the championship.",exuberant
+"Her ___ personality transformed every quiet gathering into a full celebration.",exuberant
+"He gave an ___ performance, dancing across the stage with unstoppable energy.",exuberant
+"His ___ response to the serious question frustrated everyone in the room.",flippant
+"She was known for being ___ even in situations that demanded real thought.",flippant
+"A ___ remark at the wrong moment can cause unintended and lasting offense.",flippant
+"The ladder was in a ___ position balanced on the edge of the uneven step.",precarious
+"Their financial situation remained ___ after the series of unexpected expenses.",precarious
+"She maintained a ___ balance on the narrow ledge above the crowd.",precarious
+"Her ___ smile and playful glances turned every head in the room.",coquettish
+"The character was known for her ___ behavior at every social gathering she attended.",coquettish
+"She gave a ___ laugh and looked away pretending not to notice him.",coquettish
+"His offer to help was met with a sharp and unexpected ___.",rebuff
+"She chose to ___ his advances rather than engage with him at all.",rebuff
+"The ___ stung but he understood she was not ready to be friends.",rebuff
+"The professor was considered ___, often arriving to class in unusual costumes.",eccentric
+"Her ___ habits made her stand out in the otherwise quiet neighborhood.",eccentric
+"He was known as ___ for his collection of antique doorknobs from around the world.",eccentric
+"The ___ cry of the lost child echoed through the empty hallway.",plaintive
+"She sang in a ___ tone that made everyone in the room feel her sorrow.",plaintive
+"The dog let out a ___ whimper and scratched at the closed door.",plaintive
+"The ___ old man could barely lift the heavy bag from the floor.",feeble
+"His ___ excuse convinced absolutely no one sitting at the table.",feeble
+"She made a ___ attempt to stop the argument before finally giving up.",feeble
+"His ___ obsession with locking the door three times made guests nervous.",neurotic
+"She became ___ with worry whenever her children were even a few minutes late.",neurotic
+"The character's ___ behavior made it nearly impossible for her to maintain friendships.",neurotic
+"He stared at the bill completely ___ at how expensive everything had become.",incredulous
+"She gave an ___ look when told that the entire event had been canceled.",incredulous
+"The crowd was ___ as the magician made the car disappear before their eyes.",incredulous
+"___ led the team to stop training hard and they lost the championship.",complacency
+"Success can breed ___ if we stop pushing ourselves to improve.",complacency
+"The coach warned the players against ___ after their recent string of easy wins.",complacency
+"After his poor performance the coach decided to ___ him to a backup role.",relegate
+"She was told the committee would ___ her proposal to a lower priority.",relegate
+"He refused to let anyone ___ his ideas to the bottom of the list.",relegate
+"She was fully ___ of the risks involved before making her final decision.",cognizant
+"The surgeon was ___ that the procedure carried serious potential complications.",cognizant
+"He remained ___ of his surroundings even in the most chaotic moments.",cognizant
+"The city placed a ___ on new construction until the safety review was complete.",moratorium
+"A ___ on animal testing was declared while researchers examined the data.",moratorium
+"The principal called for a ___ on all after-school activities until further notice.",moratorium
+"The ___ student had been sent to the office more times than anyone could count.",incorrigible
+"Despite every attempt to help him change he remained ___.",incorrigible
+"Her ___ habit of arriving late frustrated every teacher she had ever had.",incorrigible
+"The senator was quick to ___ the false claims made in the report.",repudiate
+"She chose to publicly ___ any connection to the controversial organization.",repudiate
+"He stood before the crowd to ___ the accusations made against his colleague.",repudiate
+"Many students ___ the unfair conditions in the school cafeteria.",deplore
+"She made it known that she would ___ all forms of dishonesty no matter how small.",deplore
+"He continued to ___ the treatment workers were forced to endure every day.",deplore
+"The coach would ___ any player who skipped practice without a valid reason.",admonish
+"She ___ her younger brother for speaking so rudely to their guest.",admonish
+"He was gently ___ by his supervisor for missing the important deadline.",admonish
+"She found ___ in music after the sudden loss of her closest friend.",solace
+"His presence alone offered her ___ during the most painful months of her life.",solace
+"Reading brought her ___ on the nights when nothing else could ease her grief.",solace
+"Without proper upkeep the once-beautiful garden began to ___.",degenerate
+"The peaceful debate started to ___ into a full shouting match.",degenerate
+"His condition would ___ rapidly without consistent medical treatment.",degenerate
+"The crowd began to ___ when the referee made a call no one agreed with.",jeer
+"His classmates would ___ at every mistake he made during his presentation.",jeer
+"She ignored the ___ and kept moving forward with quiet confidence.",jeer
+"The novel explored the theme of ___ and the long struggle for freedom.",bondage
+"Many were kept in ___ for years before the law was finally changed.",bondage
+"She felt trapped in a kind of ___ to her own fears and self-doubt.",bondage
+"He tried to ___ his emotions but broke down in tears anyway.",repress
+"The regime used censorship to ___ any opposition to its authority.",repress
+"She had spent years trying to ___ the painful memories of her past.",repress
+"The documentary brought attention to the ___ of families living without clean water.",plight
+"No one in the building seemed to notice the ___ of the struggling student.",plight
+"She devoted her career to publicizing the ___ of endangered animals.",plight
+"The young athlete seemed to ___ the spirit of determination and hard work.",embody
+"Her daily actions ___ everything the school community stands for.",embody
+"He tried to ___ the qualities of a true leader in all that he did.",embody
+"His ___ spirit lifted the mood of every person in the room.",jocund
+"The ___ old storyteller kept the children laughing long into the afternoon.",jocund
+"Despite the hardships of the journey she remained ___ and full of energy.",jocund
+"The character was mocked for his ___ mannerisms in the harsh world of the military.",effeminate
+"Critics at the time unfairly dismissed the poet's gentle style as ___.",effeminate
+"He ignored those who called his compassionate nature ___ and stayed true to himself.",effeminate
+"The speaker was warned to remove any ___ language before the broadcast went live.",profane
+"He considered it ___ to use the sacred site as a backdrop for a commercial.",profane
+"Her ___ outburst shocked everyone at the otherwise formal ceremony.",profane
+"The ___ march of time stops for no one no matter how much we wish it would.",inexorable
+"She faced the ___ pressure of a deadline that simply could not be changed.",inexorable
+"The disease spread in an ___ way despite every treatment the doctors attempted.",inexorable
+"Without proper care the once-thriving plant began to ___ and wilt.",languish
+"He was left to ___ in a cell for a crime he had never committed.",languish
+"The proposal continued to ___ in committee for months without any progress.",languish
+"The ___ of the memorial service silenced the usually noisy crowd.",solemnity
+"She accepted the award with quiet ___ rather than visible excitement.",solemnity
+"The ___ of the moment settled over everyone gathered in the room.",solemnity
+"Years of political ___ left the small country bitterly divided.",strife
+"The family had been torn apart by years of unresolved internal ___.",strife
+"She longed for peace after enduring so much ___ within her own community.",strife
+"Her mother would ___ her gently whenever she forgot to call home.",chide
+"The coach would ___ any athlete who broke one of the team's core rules.",chide
+"He was ___ for showing up to the important meeting completely unprepared.",chide
+"The ___ effects of the rumor spread through the school faster than anyone expected.",pernicious
+"Experts warned of the ___ influence the habit could have on a person over time.",pernicious
+"She recognized the ___ pattern early and took steps to stop it from spreading.",pernicious
+"The comedian's ___ humor made several members of the audience uncomfortable.",bawdy
+"The tavern rang with ___ songs and the laughter of rowdy guests.",bawdy
+"His ___ jokes were completely out of place at the formal dinner party.",bawdy
+"She found a rare moment of ___ in the quiet garden after a long exhausting day.",repose
+"The portrait captured its subject in a state of total peaceful ___.",repose
+"He sought ___ after weeks of demanding and relentless travel.",repose
+"The lawyer attempted to ___ an obscure law to defend her client in court.",invoke
+"She would often ___ the wisdom of her mentor when facing a difficult decision.",invoke
+"The speaker chose to ___ the memory of those who had given everything for the cause.",invoke
+"His ___ decision to quit the job without a plan surprised everyone who knew him.",impetuous
+"She deeply regretted the ___ remark she had made without stopping to think.",impetuous
+"An ___ move in chess can cost you control of the entire game.",impetuous
+"The years of ___ between the two families made any hope of peace seem impossible.",rancor
+"She spoke without any ___ even toward those who had truly wronged her.",rancor
+"His memoir was filled with ___ toward the people he felt had betrayed him.",rancor
+"The decorations were ___, with clashing colors and blinking lights on every surface.",garish
+"She wore a ___ outfit that could be spotted from the far end of the hallway.",garish
+"The neon sign was so ___ that it was nearly impossible to look at directly.",garish`;
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = 'down-the-clown-vocab.csv';
+  a.click();
+  URL.revokeObjectURL(a.href);
+});
+
+// ── CSV upload ─────────────────────────────────────────────────────────────
+document.getElementById('csv-input').addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => {
+    const parsed = parseCSV(ev.target.result);
+    if (parsed.length >= 2) {
+      localStorage.setItem('dtc-csv', ev.target.result);
+      questions = shuffle(parsed);
+      document.getElementById('welcome-screen').classList.remove('show');
+      restartGame();
+    } else {
+      showMessage('CSV needs at least 2 rows.', '#ff6666');
+    }
+  };
+  reader.readAsText(file);
+});
+
+function parseCSV(text) {
+  const lines = text.trim().split(/\r?\n/);
+  const result = [];
+  const firstLow = lines[0].toLowerCase();
+  const start = (firstLow.includes('sentence') || firstLow.includes('answer')) ? 1 : 0;
+  for (let i = start; i < lines.length; i++) {
+    const cols = splitCSVLine(lines[i]);
+    if (cols.length < 2) continue;
+    const sentence = cols[0].trim(), answer = cols[1].trim();
+    if (sentence && answer) result.push({ sentence, answer });
+  }
+  return result;
+}
+
+function splitCSVLine(line) {
+  const out = []; let cur = '', inQ = false;
+  for (const ch of line) {
+    if (ch === '"') { inQ = !inQ; continue; }
+    if (ch === ',' && !inQ) { out.push(cur); cur = ''; continue; }
+    cur += ch;
+  }
+  out.push(cur);
+  return out;
+}
+
+// ── Word pool ──────────────────────────────────────────────────────────────
+function buildWordPool() {
+  const seen = new Set();
+  wordPool = [];
+  questions.forEach(q => {
+    if (!seen.has(q.answer)) { seen.add(q.answer); wordPool.push(q.answer); }
+  });
+}
+
+function getDistractors(answer, n) {
+  const pool = wordPool.filter(w => w !== answer);
+  const out = [];
+  while (out.length < n) out.push(...shuffle([...pool]));
+  return out.slice(0, n);
+}
+
+function randomDistractor(answer) {
+  const pool = wordPool.filter(w => w !== answer);
+  return pool[Math.floor(Math.random() * pool.length)] || answer;
+}
+
+// ── Build clown DOM once ───────────────────────────────────────────────────
+function initClowns() {
+  clownEls = [];
+  ROW_SIZES.forEach((count, rowIdx) => {
+    const rowEl = document.getElementById(`row-${rowIdx}`);
+    rowEl.innerHTML = '';
+    for (let i = 0; i < count; i++) {
+      const wrap = document.createElement('div');
+      wrap.className = 'clown-wrap';
+      wrap.dataset.row = rowIdx;
+      wrap.dataset.word = '';
+      wrap.dataset.knocked = '';
+
+      const imgWrap = document.createElement('div');
+      imgWrap.className = 'clown-img-wrap';
+
+      const img = document.createElement('img');
+      img.src = 'clown.jpg';
+      img.alt = 'clown';
+      img.draggable = false;
+
+      const wordSpan = document.createElement('span');
+      wordSpan.className = 'clown-word';
+
+      imgWrap.appendChild(img);
+
+      const label = document.createElement('div');
+      label.className = 'clown-label';
+
+      // Score card is a SIBLING of imgWrap so it doesn't rotate with the clown
+      const card = document.createElement('div');
+      card.className = 'score-card';
+
+      wrap.append(imgWrap, label, card);
+      wrap.addEventListener('click', () => handleClownClick(wrap));
+      rowEl.appendChild(wrap);
+      clownEls.push(wrap);
+
+      // Font size for word span based on row
+      const bases = [1.9, 1.55, 1.25];
+      wrap._baseFontVw = bases[rowIdx];
+    }
+  });
+}
+
+function setWordOnClown(el, word) {
+  el.dataset.word = word;
+  const label = el.querySelector('.clown-label');
+  label.textContent = word;
+  let size = el._baseFontVw;
+  if (word.length > 13) size *= 0.72;
+  else if (word.length > 9) size *= 0.85;
+  label.style.fontSize = size.toFixed(2) + 'vw';
+}
+
+// ── Assign words once per game ─────────────────────────────────────────────
+function assignWords() {
+  const answers = questions.map(q => q.answer).slice(0, clownEls.length);
+  const words   = shuffle([...answers]);
+  clownEls.forEach((el, i) => {
+    setWordOnClown(el, words[i] || '');
+    if (words[i]) usedWords.add(words[i]);
+  });
+}
+
+// ── Render round (question only — words never change) ──────────────────────
+function renderRound() {
+  if (uniqueAnswered.size >= questions.length) { endGame(); return; }
+
+  // Only ask about answers that are visible on a standing clown right now
+  const activeWords = new Set(
+    clownEls.filter(el => el.dataset.knocked !== 'true').map(el => el.dataset.word)
+  );
+
+  const idx = questionQueue.findIndex(q => activeWords.has(q.answer));
+  if (idx === -1) {
+    showMessage('Waiting for clowns to return…', '#f5c518');
+    setTimeout(renderRound, 1500);
+    return;
+  }
+  if (idx > 0) {                          // bubble it to front
+    questionQueue.unshift(questionQueue.splice(idx, 1)[0]);
+  }
+
+  const q = questionQueue[0];
+  document.getElementById('q-num').textContent   = uniqueAnswered.size + 1;
+  document.getElementById('q-total').textContent = questions.length;
+
+  document.getElementById('sentence-text').innerHTML = q.sentence.replace(
+    '___',
+    '<span class="blank">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span>'
+  );
+
+  currentAnswer = q.answer;
+  locked = false;
+}
+
+// ── Handle click ───────────────────────────────────────────────────────────
+function handleClownClick(el) {
+  if (locked || el.dataset.knocked === 'true') return;
+
+  const word   = el.dataset.word;
+  const rowIdx = parseInt(el.dataset.row);
+
+  if (word === currentAnswer) {
+    locked = true;
+    throwBall(el, () => knockDown(el, rowIdx));
+  } else {
+    throwBall(el, () => {
+      const iw = el.querySelector('.clown-img-wrap');
+      iw.classList.remove('shake');
+      void iw.offsetWidth;
+      iw.classList.add('shake');
+      showMessage('Not quite — try again!', '#ff7777');
+      locked = false;
+    });
+  }
+}
+
+function knockDown(el, rowIdx) {
+  const double = timeLeft <= 15;
+  const pts    = ROW_PTS[rowIdx] * (double ? 2 : 1);
+  score += pts;
+  document.getElementById('score').textContent = score;
+  showMessage(double ? `⚡ +${pts} DOUBLE POINTS!` : `+${pts} — Knocked it down!`, '#44dd88');
+
+  const imgWrap = el.querySelector('.clown-img-wrap');
+  const card    = el.querySelector('.score-card');
+
+  const dir = Math.random() > 0.5 ? 'fallen-left' : 'fallen-right';
+  imgWrap.classList.add(dir);
+  el.dataset.knocked = 'true';
+
+  // Score card appears at 3 seconds, stays in place because it's outside imgWrap
+  card.innerHTML = `<span>+${pts}</span><span class="pts-label">POINTS</span>`;
+  setTimeout(() => card.classList.add('visible'), 3000);
+  // Fade out at 10 seconds, hide at 11
+  setTimeout(() => card.classList.add('fading'), 10000);
+  setTimeout(() => { card.classList.remove('visible', 'fading'); }, 11000);
+
+  // Remove from queue front, track as answered
+  const answered = questionQueue.shift();
+  uniqueAnswered.add(answered.answer);
+  answeredBank.push(answered);
+
+  // Clown respawns at 25 seconds — introduce a new word if available, else recycle
+  setTimeout(() => {
+    card.classList.remove('visible', 'fading');
+    imgWrap.classList.remove('fallen-left', 'fallen-right', 'shake');
+    el.dataset.knocked = '';
+
+    const taken = new Set(clownEls.filter(e => e.dataset.knocked !== 'true').map(e => e.dataset.word));
+
+    // Prefer a brand-new word not yet seen on the board
+    const freshChoices = questions.filter(q => !usedWords.has(q.answer) && !taken.has(q.answer));
+    if (freshChoices.length > 0) {
+      const chosen = freshChoices[Math.floor(Math.random() * freshChoices.length)];
+      usedWords.add(chosen.answer);
+      setWordOnClown(el, chosen.answer);
+      const pos = Math.min(1 + Math.floor(Math.random() * 6), questionQueue.length);
+      questionQueue.splice(pos, 0, chosen);
+    } else if (answeredBank.length > 0) {
+      // Fall back to a recycled question whose word isn't already on a standing clown
+      const choices = answeredBank.filter(q => !taken.has(q.answer));
+      if (choices.length > 0) {
+        const recycled = choices[Math.floor(Math.random() * choices.length)];
+        setWordOnClown(el, recycled.answer);
+        const pos = Math.min(1 + Math.floor(Math.random() * 6), questionQueue.length);
+        questionQueue.splice(pos, 0, recycled);
+      }
+    }
+  }, 25000);
+
+  // Advance to next question after short delay
+  setTimeout(renderRound, 700);
+}
+
+// ── Timer ──────────────────────────────────────────────────────────────────
+function startTimer() {
+  clearInterval(timerInterval);
+  timeLeft = 90;
+  updateTimerDisplay();
+  timerInterval = setInterval(() => {
+    timeLeft--;
+    updateTimerDisplay();
+    if (timeLeft === 15) {
+      document.getElementById('timer-pill').classList.add('danger');
+      document.getElementById('double-banner').classList.add('show');
+    }
+    if (timeLeft <= 0) {
+      clearInterval(timerInterval);
+      endGame();
+    }
+  }, 1000);
+}
+
+function updateTimerDisplay() {
+  const m = Math.floor(timeLeft / 60);
+  const s = timeLeft % 60;
+  document.getElementById('timer').textContent = `${m}:${s.toString().padStart(2, '0')}`;
+}
+
+function stopTimer() {
+  clearInterval(timerInterval);
+  timerInterval = null;
+}
+
+// ── Message ────────────────────────────────────────────────────────────────
+let msgTimer = null;
+function showMessage(text, color) {
+  const el = document.getElementById('message');
+  el.textContent = text;
+  el.style.color = color;
+  clearTimeout(msgTimer);
+  msgTimer = setTimeout(() => { el.textContent = ''; }, 1800);
+}
+
+// ── End / restart ──────────────────────────────────────────────────────────
+function endGame() {
+  stopTimer();
+  document.getElementById('end-score').textContent = score;
+  document.getElementById('end-max').textContent   = `${uniqueAnswered.size} of ${questions.length} answered`;
+  document.getElementById('end-screen').classList.add('show');
+}
+
+function restartGame() {
+  if (questions.length === 0) {
+    document.getElementById('welcome-screen').classList.add('show');
+    return;
+  }
+  questionQueue  = shuffle([...questions]);
+  answeredBank   = [];
+  uniqueAnswered = new Set();
+  usedWords      = new Set();
+  score          = 0;
+  locked         = false;
+  document.getElementById('score').textContent = '0';
+  document.getElementById('end-screen').classList.remove('show');
+  document.getElementById('message').textContent = '';
+
+  clownEls.forEach(el => {
+    el.querySelector('.clown-img-wrap').classList.remove('fallen-left', 'fallen-right', 'shake');
+    el.dataset.knocked = '';
+    el.querySelector('.score-card').classList.remove('visible', 'fading');
+  });
+
+  document.getElementById('timer-pill').classList.remove('danger');
+  document.getElementById('double-banner').classList.remove('show');
+  buildWordPool();
+  assignWords();
+  renderRound();
+  startTimer();
+}
+
+document.getElementById('play-again').addEventListener('click', () => {
+  questions = shuffle([...questions]);
+  restartGame();
+});
+
+// ── Utility ────────────────────────────────────────────────────────────────
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+// ── Boot ───────────────────────────────────────────────────────────────────
+initClowns();
+const savedCSV = localStorage.getItem('dtc-csv');
+if (savedCSV) {
+  const parsed = parseCSV(savedCSV);
+  if (parsed.length >= 2) {
+    questions = shuffle(parsed);
+    document.getElementById('welcome-screen').classList.remove('show');
+  }
+}
+restartGame();
+</script>
+</body>
+</html>
