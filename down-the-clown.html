@@ -1052,15 +1052,7 @@ function shuffle(arr) {
 
 // ── Boot ───────────────────────────────────────────────────────────────────
 initClowns();
-const savedCSV = localStorage.getItem('dtc-csv');
-if (savedCSV) {
-  const parsed = parseCSV(savedCSV);
-  if (parsed.length >= 2) {
-    questions = shuffle(parsed);
-    document.getElementById('welcome-screen').classList.remove('show');
-  }
-}
-restartGame();
+// Always show the welcome screen so the player can choose which game to play.
 </script>
 </body>
 </html>
