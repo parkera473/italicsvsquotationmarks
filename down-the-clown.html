@@ -132,18 +132,6 @@
       white-space: nowrap;
     }
     #download-template:hover { background: rgba(255,255,255,0.28); }
-    #download-vocab {
-      background: rgba(255,255,255,0.18);
-      border: 1px solid rgba(255,255,255,0.35);
-      border-radius: 999px;
-      padding: 5px 15px;
-      color: #fff;
-      font-size: 13px;
-      font-weight: bold;
-      cursor: pointer;
-      white-space: nowrap;
-    }
-    #download-vocab:hover { background: rgba(255,255,255,0.28); }
 
     #question-box {
       background: #fff;
@@ -371,7 +359,6 @@
     <div class="hud-pill">Q <span id="q-num">1</span> / <span id="q-total">—</span></div>
     <div id="timer-pill">⏱ <span id="timer">1:30</span></div>
     <button id="download-template">⬇ Template</button>
-    <button id="download-vocab">⬇ Vocab List</button>
     <label id="upload-label" for="csv-input">📂 Upload CSV</label>
     <input type="file" id="csv-input" accept=".csv">
   </div>
@@ -659,14 +646,6 @@ const BUILTIN_VOCAB = `sentence,answer
 "She wore a ___ outfit that could be spotted from the far end of the hallway.",garish
 "The neon sign was so ___ that it was nearly impossible to look at directly.",garish`;
 
-document.getElementById('download-vocab').addEventListener('click', () => {
-  const blob = new Blob([BUILTIN_VOCAB], { type: 'text/csv' });
-  const a = document.createElement('a');
-  a.href = URL.createObjectURL(blob);
-  a.download = 'down-the-clown-vocab.csv';
-  a.click();
-  URL.revokeObjectURL(a.href);
-});
 
 document.getElementById('welcome-play-vocab-btn').addEventListener('click', () => {
   const parsed = parseCSV(BUILTIN_VOCAB);
