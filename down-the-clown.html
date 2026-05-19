@@ -328,6 +328,13 @@
       font-weight: bold; cursor: pointer; margin-top: 4px;
     }
     #welcome-play-vocab-btn:hover { background: #ffd93d; }
+    #welcome-play-ah9-btn {
+      background: #b22234; color: #fff;
+      border: none; border-radius: 999px;
+      padding: 14px 40px; font-size: 20px;
+      font-weight: bold; cursor: pointer;
+    }
+    #welcome-play-ah9-btn:hover { background: #cc2a3e; }
 
     /* End screen */
     #end-screen {
@@ -384,6 +391,7 @@
   <div id="welcome-title">🎪 Down the Clown! 🎪</div>
   <div id="welcome-sub">Upload a CSV with your vocabulary words to start the game. Each row needs a fill-in-the-blank sentence and the correct answer.</div>
   <button id="welcome-play-vocab-btn">🎪 Play with Built-in Vocab</button>
+  <button id="welcome-play-ah9-btn">🇺🇸 AH9 Review</button>
   <label id="welcome-upload-btn" for="csv-input">📂 Upload Your Own CSV</label>
   <button id="welcome-template-btn">⬇ Download Blank Template</button>
 </div>
@@ -663,6 +671,47 @@ document.getElementById('download-vocab').addEventListener('click', () => {
 document.getElementById('welcome-play-vocab-btn').addEventListener('click', () => {
   const parsed = parseCSV(BUILTIN_VOCAB);
   localStorage.setItem('dtc-csv', BUILTIN_VOCAB);
+  questions = shuffle(parsed);
+  document.getElementById('welcome-screen').classList.remove('show');
+  restartGame();
+});
+
+const AH9_VOCAB = `sentence,answer
+"The ___ theory suggested that if one country fell to communism, neighboring countries would follow like falling dominoes.",domino
+"The Japanese surprise attack on a U.S. naval base in Hawaii in 1941 brought America into World War ___.",II
+"___ is the policy of making concessions to an aggressive power to avoid conflict, used to describe how Allied leaders responded to Hitler before WWII.",Appeasement
+"The My Lai ___ was a 1968 incident in which U.S. soldiers killed hundreds of unarmed South Vietnamese civilians.",Massacre
+"David Greenglass testified against his own family members in exchange for a ___ sentence.",lesser
+"Richard Nixon chose to ___ from office rather than face an impeachment trial.",resign
+"President Lyndon B. Johnson signed the law creating ___ the federal health insurance program for Americans 65 and older.",Medicare
+"Love ___ became a symbol of industrial pollution after residents of a New York neighborhood discovered their homes were built on a toxic waste dump.",Canal
+"Vietnam War protesters who rejected mainstream American culture were often called ___.",hippies
+"The Vietnam War was the first American war widely seen on ___ bringing the reality of combat directly into American living rooms.",television
+"Emmett Till was a 14-year-old Black boy whose 1955 murder in Mississippi became a catalyst for the Civil Rights ___.",Movement
+"Freedom ___ were interracial groups of civil rights activists who rode interstate buses into the segregated South in 1961.",Riders
+"Civil Rights activists staged ___ at segregated lunch counters peacefully refusing to leave until they were served.",sit-ins
+"The ___ film captured by amateur photographer Abraham Zapruder provided crucial visual evidence of President Kennedy's 1963 assassination.",Zapruder
+"Rachel Carson's 1962 book Silent ___ warned of the environmental dangers of pesticides and helped launch the modern environmental movement.",Spring
+"During the Iran ___ Crisis 52 American diplomats and citizens were held captive for 444 days after Iranian students seized the U.S. Embassy in Tehran.",Hostage
+"The ___ scandal involving a break-in at Democratic Party headquarters and a cover-up led to President Nixon's resignation.",Watergate
+"During the Cuban ___ Crisis of 1962 the U.S. and Soviet Union came closer to nuclear war than at any other point in the Cold War.",Missile
+"Martin Luther King Jr. wrote his famous letter from a ___ in Birmingham while imprisoned for participating in civil rights demonstrations.",jail
+"The United States dropped an atomic bomb on ___ Japan on August 6 1945 instantly killing tens of thousands of people.",Hiroshima
+"The Little Rock ___ were nine Black students who integrated Central High School in Arkansas in 1957 escorted by federal troops.",Nine
+"In 1957 the Soviet Union launched ___ the first artificial satellite to orbit Earth shocking Americans and igniting the Space Race.",Sputnik
+"___ was a planned suburban community built after WWII in New York symbolizing the postwar American Dream of affordable homeownership.",Levittown
+"___ became a postwar sales sensation sold at home parties where housewives demonstrated the airtight plastic containers to their neighbors.",Tupperware
+"Elvis ___ became the king of rock and roll in the 1950s scandalizing older generations with his music and hip-swiveling performances.",Presley
+"The ___ Ranger was a popular 1950s television Western featuring a masked hero and his companion Tonto fighting for justice on the frontier.",Lone
+"Leave It to ___ was a 1950s sitcom that portrayed an idealized image of suburban American family life.",Beaver
+"The postwar ___ Boom referred to the dramatic rise in birth rates in the United States between 1946 and 1964.",Baby
+"___ was a period of intense anti-Communist suspicion in the 1950s led by Senator Joseph McCarthy who accused many Americans of being Soviet spies.",McCarthyism
+"Julius and Ethel Rosenberg were convicted of ___ to commit espionage after being accused of passing atomic bomb secrets to the Soviet Union.",conspiracy
+"The Battle of Chosin ___ was a brutal 1950 Korean War battle in which U.S. and U.N. forces fought through freezing temperatures to escape a massive Chinese ambush.",Reservoir`;
+
+document.getElementById('welcome-play-ah9-btn').addEventListener('click', () => {
+  const parsed = parseCSV(AH9_VOCAB);
+  localStorage.setItem('dtc-csv', AH9_VOCAB);
   questions = shuffle(parsed);
   document.getElementById('welcome-screen').classList.remove('show');
   restartGame();
